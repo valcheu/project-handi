@@ -1,0 +1,149 @@
+// project-handi/backend/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- ENUMS ---
+
+enum UserRole {
+  APPLICANT
+  RECRUITER
+  ADMIN
+}
+
+enum ContractType {
+  CDI
+  CDD
+  INTERIM
+  STAGE
+  ALTERNANCE
+}
+
+enum ExperienceLevel {
+  JUNIOR
+  CONFIRME
+  SENIOR
+}
+
+enum RemotePolicy {
+  NO_REMOTE
+  HYBRID
+  FULL_REMOTE
+}
+
+enum DisabilityCategory {
+  MOTEUR
+  VISUEL
+  AUDITIF
+  PSYCHIQUE
+  COGNITIF
+  INVISIBLE
+}
+
+enum ApplicationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+// --- MODELES ---
+
+model User {
+  id             Int           @id @default(autoincrement())
+  email          String        @unique
+  password       String
+  firstName      String
+  lastName       String
+  role           UserRole      @default(APPLICANT)
+  createdAt      DateTime      @default(now())
+  
+  // Relations
+  authoredOffers Offer[]       @relation("RecruiterOffers")
+  applications   Application[]
+  
+  companyId      Int?          // Pour les recruteurs rattachés à une boîte
+  company        Company?      @relation(fields: [companyId], references: [id])
+}
+
+model Company {
+  id           Int           @id @default(autoincrement())
+  name         String        @unique
+  sector       String?       // Ex: TECH, SANTE
+  
+  // Relations
+  users        User[]
+  offers       Offer[]
+  applications Application[] @relation("CompanyToApplications")
+}
+
+model Offer {
+  id           Int                @id @default(autoincrement())
+  title        String
+  description  String
+  location     String
+  contract     ContractType
+  experience   ExperienceLevel
+  remote       RemotePolicy       @default(NO_REMOTE)
+  
+  // Filtre spécifique handicap (Tableau d'Enums)
+  disabilityCompatible DisabilityCategory[] 
+
+  createdAt    DateTime           @default(now())
+
+  // Relations
+  recruiterId  Int
+  recruiter    User               @relation("RecruiterOffers", fields: [recruiterId], references: [id])
+
+  companyId    Int
+  company      Company            @relation(fields: [companyId], references: [id])
+  
+  applications Application[]
+  
+  // Many-to-Many
+  adaptations  Adaptation[]
+  skills       Skill[]
+}
+
+model Adaptation {
+  id       Int                @id @default(autoincrement())
+  label    String             @unique
+  category DisabilityCategory
+  offers   Offer[]
+}
+
+model Skill {
+  id     Int     @id @default(autoincrement())
+  name   String  @unique
+  offers Offer[]
+}
+
+model Application {
+  id        Int               @id @default(autoincrement())
+  status    ApplicationStatus @default(PENDING)
+  createdAt DateTime          @default(now())
+
+  // Documents de candidature
+  cvUrl            String?   // URL du CV
+  coverLetterUrl   String?   // URL lettre de motivation
+  additionalDocs   String[]  @default([]) // URLs des pièces jointes supplémentaires
+
+  // L'utilisateur qui postule
+  userId    Int
+  user      User              @relation(fields: [userId], references: [id])
+
+  // L'offre concernée
+  offerId   Int
+  offer     Offer             @relation(fields: [offerId], references: [id])
+
+  // On lie aussi directement à l'entreprise pour faciliter les requêtes du recruteur
+  companyId Int?
+  company   Company?          @relation("CompanyToApplications", fields: [companyId], references: [id])
+
+  @@unique([userId, offerId]) // Optionnel : Empêche un utilisateur de postuler deux fois à la même offre
+}

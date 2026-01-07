@@ -4,34 +4,47 @@
  */
 
 // ============================================
-// ENUMS ET TYPES DE BASE
+// ENUMS ET TYPES DE BASE (Synchronized with Prisma Schema)
 // ============================================
 
-export type UserRole = 'candidate' | 'recruiter' | 'organization';
+/**
+ * Rôles utilisateur - Correspond à l'enum UserRole du schema Prisma
+ */
+export type UserRole = 'APPLICANT' | 'RECRUITER' | 'ADMIN';
 
+/**
+ * Statut d'une candidature - Correspond à l'enum ApplicationStatus du schema Prisma
+ */
+export type ApplicationStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED';
+
+/**
+ * Types de contrat - Correspond à l'enum ContractType du schema Prisma
+ */
+export type ContractType = 'CDI' | 'CDD' | 'INTERIM' | 'STAGE' | 'ALTERNANCE';
+
+/**
+ * Niveaux d'expérience - Correspond à l'enum ExperienceLevel du schema Prisma
+ */
+export type ExperienceLevel = 'JUNIOR' | 'CONFIRME' | 'SENIOR';
+
+/**
+ * Politiques de télétravail - Correspond à l'enum RemotePolicy du schema Prisma
+ */
+export type RemotePolicy = 'NO_REMOTE' | 'HYBRID' | 'FULL_REMOTE';
+
+/**
+ * Catégories de handicap - Correspond à l'enum DisabilityCategory du schema Prisma
+ */
+export type DisabilityCategory = 
+  | 'MOTEUR' 
+  | 'VISUEL' 
+  | 'AUDITIF' 
+  | 'PSYCHIQUE' 
+  | 'COGNITIF' 
+  | 'INVISIBLE';
+
+// Types spécifiques au frontend (non Prisma)
 export type OfferStatus = 'draft' | 'published' | 'closed' | 'archived';
-
-export type ApplicationStatus = 
-  | 'pending' 
-  | 'reviewing' 
-  | 'shortlisted' 
-  | 'interview' 
-  | 'accepted' 
-  | 'rejected';
-
-export type ContractType = 
-  | 'CDI' 
-  | 'CDD' 
-  | 'Interim' 
-  | 'Stage' 
-  | 'Alternance' 
-  | 'Freelance';
-
-export type ExperienceLevel = 
-  | 'junior' 
-  | 'intermediate' 
-  | 'senior' 
-  | 'expert';
 
 export type ResourceType = 
   | 'guide' 
@@ -41,20 +54,38 @@ export type ResourceType =
   | 'formation';
 
 // ============================================
-// USER & AUTH
+// USER & AUTH (Synchronized with Prisma Schema)
 // ============================================
 
+/**
+ * Interface User - Correspond au modèle User du schema Prisma
+ */
 export interface User {
-  id: string;
+  id: number;
   email: string;
-  role: UserRole;
+  password: string; // Existe dans Prisma mais ne devrait jamais être exposé au frontend en production
   firstName: string;
   lastName: string;
-  phone?: string;
-  avatar?: string;
+  role: UserRole;
   createdAt: Date;
-  updatedAt: Date;
-  isActive: boolean;
+  
+  // Relations
+  companyId?: number | null;
+  company?: Company | null;
+}
+
+/**
+ * Version sécurisée de User sans le mot de passe (pour les réponses API)
+ */
+export interface SafeUser {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: UserRole;
+  createdAt: Date;
+  companyId?: number | null;
+  company?: Company | null;
 }
 
 export interface AuthCredentials {
@@ -62,265 +93,144 @@ export interface AuthCredentials {
   password: string;
 }
 
-export interface RegisterData extends AuthCredentials {
+export interface RegisterData {
+  email: string;
+  password: string;
   firstName: string;
   lastName: string;
   role: UserRole;
-  phone?: string;
+  companyId?: number; // Pour les recruteurs rattachés à une entreprise
 }
 
 // ============================================
-// CANDIDATE
+// COMPANY (Synchronized with Prisma Schema)
 // ============================================
 
-export interface Candidate extends User {
-  role: 'candidate';
-  profile?: CandidateProfile;
-}
-
-export interface CandidateProfile {
-  userId: string;
-  title?: string; // Titre professionnel
-  bio?: string;
-  skills: string[];
-  experience: Experience[];
-  education: Education[];
-  languages: Language[];
-  cv?: string; // URL du CV
-  portfolio?: string;
-  linkedin?: string;
-  github?: string;
-  location: Location;
-  availability: 'immediate' | 'one_month' | 'three_months' | 'not_available';
-  desiredContractTypes: ContractType[];
-  desiredSalary?: {
-    min: number;
-    max: number;
-    currency: string;
-  };
-  disabilities?: Disability[];
-  accommodations?: string; // Aménagements souhaités
-}
-
-export interface Experience {
-  id: string;
-  company: string;
-  position: string;
-  startDate: Date;
-  endDate?: Date;
-  current: boolean;
-  description: string;
-  skills: string[];
-}
-
-export interface Education {
-  id: string;
-  institution: string;
-  degree: string;
-  field: string;
-  startDate: Date;
-  endDate?: Date;
-  current: boolean;
-  description?: string;
-}
-
-export interface Language {
-  name: string;
-  level: 'basic' | 'intermediate' | 'fluent' | 'native';
-}
-
-export interface Disability {
-  type: string;
-  description?: string;
-  requiresAccommodation: boolean;
-}
-
-// ============================================
-// RECRUITER
-// ============================================
-
-export interface Recruiter extends User {
-  role: 'recruiter';
-  company: Company;
-}
-
+/**
+ * Interface Company - Correspond au modèle Company du schema Prisma
+ */
 export interface Company {
-  id: string;
+  id: number;
   name: string;
-  logo?: string;
-  description: string;
-  website?: string;
-  industry: string;
-  size: string; // "1-10", "11-50", "51-200", etc.
-  location: Location;
-  inclusivePolicies?: string[];
+  sector?: string | null; // Ex: TECH, SANTE
+  
+  // Relations (optionnelles selon le contexte d'inclusion)
+  users?: User[];
+  offers?: Offer[];
+  applications?: Application[];
 }
 
-// ============================================
-// ORGANIZATION
-// ============================================
-
-export interface Organization extends User {
-  role: 'organization';
-  organizationData: OrganizationData;
-}
-
-export interface OrganizationData {
-  id: string;
-  name: string;
-  logo?: string;
-  description: string;
-  website?: string;
-  type: 'association' | 'government' | 'ngo' | 'foundation';
-  mission: string;
-  location: Location;
-}
 
 // ============================================
-// JOB OFFERS
+// JOB OFFERS (Synchronized with Prisma Schema)
 // ============================================
 
+/**
+ * Interface Offer - Correspond au modèle Offer du schema Prisma
+ */
 export interface Offer {
-  id: string;
-  recruiterId: string;
-  company: Company;
+  id: number;
   title: string;
   description: string;
-  requirements: string[];
-  responsibilities: string[];
-  contractType: ContractType;
-  experienceLevel: ExperienceLevel;
-  location: Location;
-  remote: 'no' | 'hybrid' | 'full';
-  salary?: {
-    min: number;
-    max: number;
-    currency: string;
-  };
-  skills: string[];
-  benefits: string[];
-  status: OfferStatus;
-  isInclusive: boolean; // Poste adapté personnes en situation de handicap
-  accommodationsAvailable?: string[];
-  publicationDate: Date;
-  expirationDate?: Date;
-  applicationsCount: number;
-  viewsCount: number;
+  location: string;
+  contract: ContractType;
+  experience: ExperienceLevel;
+  remote: RemotePolicy;
+  
+  // Filtre spécifique handicap (Tableau d'Enums)
+  disabilityCompatible: DisabilityCategory[];
+  
   createdAt: Date;
-  updatedAt: Date;
+  
+  // Relations FK
+  recruiterId: number;
+  companyId: number;
+  
+  // Relations (optionnelles selon le contexte d'inclusion)
+  recruiter?: User;
+  company?: Company;
+  applications?: Application[];
+  adaptations?: Adaptation[];
+  skills?: Skill[];
 }
 
+/**
+ * Adaptation d'accessibilité liée aux offres
+ */
+export interface Adaptation {
+  id: number;
+  label: string;
+  category: DisabilityCategory;
+}
+
+/**
+ * Compétence technique liée aux offres
+ */
+export interface Skill {
+  id: number;
+  name: string;
+}
+
+/**
+ * Filtres pour la recherche d'offres
+ */
 export interface OfferFilters {
   search?: string;
   contractTypes?: ContractType[];
-  experienceLevel?: ExperienceLevel[];
+  experienceLevels?: ExperienceLevel[];
   location?: string;
-  remote?: ('no' | 'hybrid' | 'full')[];
-  isInclusive?: boolean;
+  remote?: RemotePolicy[];
+  disabilityCompatible?: DisabilityCategory[];
   skills?: string[];
-  salaryMin?: number;
-  salaryMax?: number;
 }
 
 // ============================================
-// APPLICATIONS
+// APPLICATIONS (Synchronized with Prisma Schema)
 // ============================================
 
+/**
+ * Interface Application - Correspond EXACTEMENT au modèle Application du schema Prisma
+ * Cette interface représente une candidature d'un utilisateur à une offre
+ */
 export interface Application {
-  id: string;
-  offerId: string;
-  candidateId: string;
-  candidate: Candidate;
-  offer: Offer;
+  id: number;
   status: ApplicationStatus;
-  coverLetter: string;
-  cv: string; // URL
-  appliedAt: Date;
-  updatedAt: Date;
-  notes?: ApplicationNote[];
-}
-
-export interface ApplicationNote {
-  id: string;
-  applicationId: string;
-  authorId: string;
-  content: string;
   createdAt: Date;
+  
+  // Relations FK (Foreign Keys)
+  userId: number;
+  offerId: number;
+  companyId?: number | null;
+  
+  // Relations incluses (optionnelles selon le contexte de la requête)
+  user?: SafeUser;
+  offer?: Offer;
+  company?: Company | null;
 }
 
-// ============================================
-// MESSAGING
-// ============================================
-
-export interface Message {
-  id: string;
-  conversationId: string;
-  senderId: string;
-  receiverId: string;
-  content: string;
-  read: boolean;
-  sentAt: Date;
-  attachments?: Attachment[];
+/**
+ * Type pour la création d'une nouvelle candidature
+ */
+export interface CreateApplicationData {
+  offerId: number;
 }
 
-export interface Conversation {
-  id: string;
-  participants: User[];
-  lastMessage?: Message;
-  unreadCount: number;
-  createdAt: Date;
-  updatedAt: Date;
+/**
+ * Type pour la mise à jour du statut d'une candidature (recruteur uniquement)
+ */
+export interface UpdateApplicationStatusData {
+  status: 'ACCEPTED' | 'REJECTED';
 }
 
-export interface Attachment {
-  id: string;
-  filename: string;
-  url: string;
-  size: number;
-  type: string;
-}
-
-// ============================================
-// RESOURCES
-// ============================================
-
-export interface Resource {
-  id: string;
-  organizationId: string;
-  organization: OrganizationData;
-  title: string;
-  description: string;
-  content: string;
-  type: ResourceType;
-  category: string;
-  tags: string[];
-  thumbnail?: string;
-  fileUrl?: string; // Pour documents PDF, etc.
-  videoUrl?: string;
-  duration?: number; // En minutes pour vidéos/formations
-  downloadCount: number;
-  viewsCount: number;
-  publishedAt: Date;
-  updatedAt: Date;
-  isPublished: boolean;
-}
 
 // ============================================
 // COMMON TYPES
 // ============================================
 
-export interface Location {
-  city: string;
-  region?: string;
-  country: string;
-  postalCode?: string;
-  address?: string;
-}
-
 export interface Notification {
-  id: string;
-  userId: string;
-  type: 'application' | 'message' | 'offer' | 'system';
+  id: number;
+  userId: number;
+  type: 'application' | 'offer' | 'system';
   title: string;
   content: string;
   read: boolean;
@@ -337,42 +247,25 @@ export interface LoginFormData {
   password: string;
 }
 
-export interface RegisterCandidateFormData {
+export interface RegisterFormData {
   email: string;
   password: string;
   confirmPassword: string;
   firstName: string;
   lastName: string;
-  phone?: string;
-}
-
-export interface RegisterRecruiterFormData extends RegisterCandidateFormData {
-  companyName: string;
-  companyWebsite?: string;
-}
-
-export interface RegisterOrganizationFormData extends RegisterCandidateFormData {
-  organizationName: string;
-  organizationType: 'association' | 'government' | 'ngo' | 'foundation';
-  organizationWebsite?: string;
+  role: UserRole;
 }
 
 export interface CreateOfferFormData {
   title: string;
   description: string;
-  requirements: string;
-  responsibilities: string;
-  contractType: ContractType;
-  experienceLevel: ExperienceLevel;
-  location: Location;
-  remote: 'no' | 'hybrid' | 'full';
-  salaryMin?: number;
-  salaryMax?: number;
-  salaryCurrency: string;
-  skills: string[];
-  benefits: string[];
-  isInclusive: boolean;
-  accommodationsAvailable?: string;
+  location: string;
+  contract: ContractType;
+  experience: ExperienceLevel;
+  remote: RemotePolicy;
+  disabilityCompatible: DisabilityCategory[];
+  companyId: number;
+  // Optionnel : skills et adaptations à ajouter après création
 }
 
 // ============================================

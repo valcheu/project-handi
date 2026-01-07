@@ -1,0 +1,347 @@
+/**
+ * ApplicationDetailPage - Détail d'une candidature
+ * Affiche : CV, documents, offre associée, statut
+ * Conforme RGAA/WCAG AA
+ */
+
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Icon } from '../components/Icon';
+import apiClient from '../api/apiClient';
+
+interface ApplicationDetail {
+  id: number;
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+  createdAt: string;
+  cvUrl?: string | null;
+  coverLetterUrl?: string | null;
+  additionalDocs?: string[];
+  offer: {
+    id: number;
+    title: string;
+    description: string;
+    location: string;
+    contract: string;
+    experience: string;
+    remote: string;
+    company: {
+      id: number;
+      name: string;
+      sector?: string | null;
+    };
+  };
+  company: {
+    id: number;
+    name: string;
+    sector?: string | null;
+  };
+}
+
+export const ApplicationDetailPage = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [application, setApplication] = useState<ApplicationDetail | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchApplication = async () => {
+      try {
+        const response = await apiClient.get(`/applications/${id}`);
+        setApplication(response.data);
+      } catch (err: any) {
+        setError(err.response?.data?.message || 'Candidature introuvable');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchApplication();
+  }, [id]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <p className="text-slate-400" role="status" aria-live="polite">
+          Chargement...
+        </p>
+      </div>
+    );
+  }
+
+  if (error || !application) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-red-400 mb-4">Candidature introuvable</h1>
+          <p className="text-slate-400 mb-6">{error || 'Cette candidature n\'existe pas'}</p>
+          <button
+            type="button"
+            onClick={() => navigate('/mes-candidatures')}
+            className="text-sky-400 hover:text-sky-300 underline focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-slate-900 px-2 py-1 rounded"
+          >
+            Retour à mes candidatures
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const getStatusConfig = (status: string) => {
+    switch (status) {
+      case 'ACCEPTED':
+        return { 
+          color: 'bg-green-500/10 text-green-400 border-green-500/30', 
+          label: 'Candidature acceptée',
+          icon: 'check' as const
+        };
+      case 'REJECTED':
+        return { 
+          color: 'bg-red-500/10 text-red-400 border-red-500/30', 
+          label: 'Candidature refusée',
+          icon: 'x' as const
+        };
+      default:
+        return { 
+          color: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30', 
+          label: 'En attente de réponse',
+          icon: 'clock' as const
+        };
+    }
+  };
+
+  const statusConfig = getStatusConfig(application.status);
+
+  return (
+    <div className="min-h-screen bg-slate-900 text-white">
+      {/* Header */}
+      <header className="border-b border-slate-800 p-6">
+        <div className="container mx-auto">
+          <button
+            type="button"
+            onClick={() => navigate('/mes-candidatures')}
+            className="text-sky-400 hover:text-sky-300 mb-4 flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-sky-500 rounded px-2 py-1 -ml-2 transition-colors"
+            aria-label="Retour à mes candidatures"
+          >
+            <Icon name="chevron-left" size={20} />
+            Retour à mes candidatures
+          </button>
+          
+          <h1 className="text-3xl font-bold text-slate-100 mb-2">
+            Ma candidature
+          </h1>
+        </div>
+      </header>
+
+      {/* Contenu principal */}
+      <main className="container mx-auto px-6 py-8 max-w-4xl">
+        
+        {/* En-tête de la candidature */}
+        <section className="bg-slate-800 rounded-2xl border border-slate-700 p-6 mb-6">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold text-slate-100 mb-2">
+                {application.offer.title}
+              </h2>
+              <p className="text-slate-300 flex items-center gap-2 mb-2">
+                <Icon name="building" size={18} />
+                {application.offer.company.name}
+              </p>
+              {application.offer.company.sector && (
+                <p className="text-sm text-slate-400">
+                  {application.offer.company.sector}
+                </p>
+              )}
+            </div>
+            
+            <span 
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border ${statusConfig.color} self-start`}
+              role="status"
+              aria-label={statusConfig.label}
+            >
+              <Icon name={statusConfig.icon} size={16} />
+              {statusConfig.label}
+            </span>
+          </div>
+          
+          <div className="flex items-center gap-2 text-sm text-slate-400 border-t border-slate-700 pt-4">
+            <Icon name="calendar" size={16} />
+            Postulée le {new Date(application.createdAt).toLocaleDateString('fr-FR', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            })}
+          </div>
+        </section>
+
+        {/* Documents de candidature */}
+        <section className="mb-6">
+          <h3 className="text-xl font-bold text-slate-100 mb-4 flex items-center gap-2">
+            <Icon name="document" size={24} className="text-sky-400" />
+            Documents de candidature
+          </h3>
+          
+          {!application.cvUrl && !application.coverLetterUrl && (!application.additionalDocs || application.additionalDocs.length === 0) ? (
+            <div className="bg-slate-800 rounded-xl border border-dashed border-slate-700 p-8 text-center">
+              <p className="text-slate-400">
+                Aucun document n'a été joint à cette candidature
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* CV */}
+              {application.cvUrl && (
+                <article className="bg-slate-800 rounded-xl border border-slate-700 p-6 hover:border-sky-500 transition-all">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-sky-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Icon name="document" size={24} className="text-sky-400" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-bold text-slate-100 mb-1">CV</h4>
+                      <p className="text-sm text-slate-400 mb-3 break-all">
+                        {application.cvUrl.split('/').pop()}
+                      </p>
+                      <div className="flex gap-2">
+                        <a
+                          href={application.cvUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs px-3 py-1.5 bg-sky-500 hover:bg-sky-600 text-white rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-slate-800"
+                        >
+                          Voir
+                        </a>
+                        <a
+                          href={application.cvUrl}
+                          download
+                          className="text-xs px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-slate-800"
+                        >
+                          Télécharger
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              )}
+
+              {/* Lettre de motivation */}
+              {application.coverLetterUrl && (
+                <article className="bg-slate-800 rounded-xl border border-slate-700 p-6 hover:border-purple-500 transition-all">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-purple-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Icon name="document" size={24} className="text-purple-400" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-bold text-slate-100 mb-1">Lettre de motivation</h4>
+                      <p className="text-sm text-slate-400 mb-3 break-all">
+                        {application.coverLetterUrl.split('/').pop()}
+                      </p>
+                      <div className="flex gap-2">
+                        <a
+                          href={application.coverLetterUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs px-3 py-1.5 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-slate-800"
+                        >
+                          Voir
+                        </a>
+                        <a
+                          href={application.coverLetterUrl}
+                          download
+                          className="text-xs px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-slate-800"
+                        >
+                          Télécharger
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              )}
+
+              {/* Pièces jointes supplémentaires */}
+              {application.additionalDocs?.map((docUrl, index) => (
+                <article 
+                  key={index}
+                  className="bg-slate-800 rounded-xl border border-slate-700 p-6 hover:border-green-500 transition-all"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-green-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Icon name="document" size={24} className="text-green-400" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-bold text-slate-100 mb-1">Document {index + 1}</h4>
+                      <p className="text-sm text-slate-400 mb-3 break-all">
+                        {docUrl.split('/').pop()}
+                      </p>
+                      <div className="flex gap-2">
+                        <a
+                          href={docUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-slate-800"
+                        >
+                          Voir
+                        </a>
+                        <a
+                          href={docUrl}
+                          download
+                          className="text-xs px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-slate-800"
+                        >
+                          Télécharger
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Offre d'emploi associée */}
+        <section className="mb-6">
+          <h3 className="text-xl font-bold text-slate-100 mb-4 flex items-center gap-2">
+            <Icon name="briefcase" size={24} className="text-sky-400" />
+            Offre d'emploi associée
+          </h3>
+          
+          <article 
+            className="bg-slate-800 rounded-xl border border-slate-700 p-6 hover:border-sky-500 transition-all cursor-pointer"
+            onClick={() => navigate(`/offres/${application.offer.id}`)}
+            role="button"
+            tabIndex={0}
+            aria-label={`Voir l'offre complète pour ${application.offer.title}`}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                navigate(`/offres/${application.offer.id}`);
+              }
+            }}
+          >
+            <h4 className="text-lg font-bold text-slate-100 mb-2">
+              {application.offer.title}
+            </h4>
+            <div className="flex flex-wrap gap-2 mb-3 text-sm text-slate-400">
+              <span className="flex items-center gap-1">
+                <Icon name="location" size={14} />
+                {application.offer.location}
+              </span>
+              <span>•</span>
+              <span>{application.offer.contract}</span>
+              <span>•</span>
+              <span>{application.offer.experience}</span>
+            </div>
+            <p className="text-slate-300 mb-4 line-clamp-3">
+              {application.offer.description}
+            </p>
+            <div className="inline-flex items-center gap-2 text-sky-400 hover:text-sky-300 font-medium transition-colors">
+              Voir l'offre complète
+              <Icon name="arrow-right" size={16} />
+            </div>
+          </article>
+        </section>
+
+      </main>
+    </div>
+  );
+};
+

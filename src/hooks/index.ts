@@ -7,3 +7,4 @@ export { useOffers } from './useOffers';
 export { useFilters } from './useFilters';
 export { useMessages } from './useMessages';
 export { useUserRole } from './useUserRole';
+export { useApplications } from './useApplications';
