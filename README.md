@@ -90,7 +90,7 @@ docker --version
 ### 1. Cloner le repository
 
 ```bash
-git clone <URL_DU_REPO>
+git clone https://github.com/valcheu/project-handi.git
 cd project-handi
 ```
 
@@ -104,7 +104,7 @@ npm install
 
 #### Frontend
 ```bash
-cd frontend
+cd ../frontend
 npm install
 ```
 
@@ -112,57 +112,90 @@ npm install
 
 ## 🎯 Lancement du projet
 
-### Méthode 1 : Lancement complet (Recommandé)
+### Guide de démarrage rapide (Recommandé pour tester)
 
-#### Étape 1 : Démarrer la base de données PostgreSQL avec Docker
+Suivez ces étapes **dans l'ordre** :
+
+#### Étape 1 : Démarrer Docker Desktop
+
+⚠️ **Important** : Lancez l'application **Docker Desktop** sur votre machine avant de continuer.
+
+Vérifiez que Docker fonctionne :
+```bash
+docker --version
+docker ps
+```
+
+#### Étape 2 : Démarrer la base de données PostgreSQL
 
 ```bash
-# À la racine du projet
+# À la racine du projet (project-handi/)
 docker-compose up -d
 ```
 
 Cette commande démarre PostgreSQL en arrière-plan. Vérifiez que le conteneur fonctionne :
 ```bash
 docker ps
+# Vous devriez voir : handi_db avec le statut "Up"
 ```
 
-Vous devriez voir un conteneur `postgres` en cours d'exécution.
-
-#### Étape 2 : Configurer le backend
+#### Étape 3 : Configurer le backend
 
 ```bash
 cd backend
 
-# Créer le fichier .env (si pas déjà fait)
-# Copier/créer avec le contenu suivant :
+# Créer le fichier .env à partir de l'exemple
+cp .env.example .env
+
+# OU créer manuellement le fichier .env avec :
 cat > .env << 'EOF'
-DATABASE_URL="postgresql://user:password@localhost:5432/job_db"
-JWT_SECRET="votre_secret_jwt_super_securise_changez_moi_en_production"
+DATABASE_URL="postgresql://val:val@localhost:5432/job_db"
+JWT_SECRET="dev_secret_key_change_in_production"
 PORT=5000
 EOF
+```
+
+⚠️ **Important** : Les identifiants de connexion (`val:val`) doivent correspondre à ceux définis dans `docker-compose.yml`.
+
+#### Étape 4 : Initialiser la base de données
+
+```bash
+# Toujours dans le dossier backend/
 
 # Générer le client Prisma
 npx prisma generate
 
-# Appliquer les migrations
+# Appliquer les migrations (créer les tables)
 npx prisma migrate dev
 
-# Peupler la base de données avec des données de test
+# Peupler la base avec des données de test
 npx prisma db seed
 ```
 
-#### Étape 3 : Lancer le serveur backend
+✅ Si tout s'est bien passé, vous devriez voir :
+```
+✅ Candidatures créées
+🎉 SEEDING TERMINÉ AVEC SUCCÈS !
+```
+
+#### Étape 5 : Lancer le serveur backend
 
 ```bash
-# Dans le dossier backend
+# Dans le dossier backend/
 npm run dev
 ```
 
 Le backend démarre sur **http://localhost:5000**
 
-#### Étape 4 : Lancer le serveur frontend
+Vous devriez voir :
+```
+✅ Server is running on port 5000
+✅ Connected to PostgreSQL
+```
 
-**Dans un nouveau terminal :**
+#### Étape 6 : Lancer le serveur frontend
+
+**Dans un nouveau terminal** (gardez le backend en cours d'exécution) :
 
 ```bash
 cd frontend
@@ -170,23 +203,6 @@ npm run dev
 ```
 
 Le frontend démarre sur **http://localhost:5173**
-
-### Méthode 2 : Lancement séparé (développement)
-
-Si vous préférez lancer chaque service manuellement :
-
-```bash
-# Terminal 1 - Base de données
-docker-compose up postgres
-
-# Terminal 2 - Backend
-cd backend
-npm run dev
-
-# Terminal 3 - Frontend
-cd frontend
-npm run dev
-```
 
 ---
 
@@ -200,39 +216,41 @@ Une fois tout lancé, ouvrez votre navigateur sur :
 
 ### Comptes de test
 
-Le seed a créé des comptes de test que vous pouvez utiliser :
+Le seed a créé des comptes de test que vous pouvez utiliser pour vous connecter immédiatement :
 
-#### Candidats
-```
-Email: marie.dupont@example.com
-Mot de passe: password123
+#### 👤 Candidats
 
-Email: jean.martin@example.com
-Mot de passe: password123
+| Email | Mot de passe | Candidatures existantes |
+|-------|--------------|------------------------|
+| marie.dupont@example.com | password123 | 3 candidatures (dont 1 acceptée) |
+| jean.martin@example.com | password123 | 2 candidatures |
+| sophie.bernard@example.com | password123 | Aucune candidature |
 
-Email: sophie.bernard@example.com
-Mot de passe: password123
-```
+#### 🏢 Recruteurs
 
-#### Recruteurs
-```
-Email: recruiter@techinclusion.com
-Mot de passe: password123
+| Email | Mot de passe | Entreprise |
+|-------|--------------|------------|
+| recruiter@techinclusion.com | password123 | TechInclusion |
+| hr@greenenergy.com | password123 | GreenEnergy |
+| rh@healthplus.com | password123 | HealthPlus |
 
-Email: hr@greenenergy.com
-Mot de passe: password123
+### Test recommandé
 
-Email: rh@healthplus.com
-Mot de passe: password123
-```
+1. **Connectez-vous avec Marie Dupont** (`marie.dupont@example.com` / `password123`)
+2. Allez sur la page **"Mes Candidatures"** pour voir ses 3 candidatures existantes
+3. Cliquez sur une candidature pour voir les détails
+4. Explorez le dashboard pour rechercher d'autres offres
+5. Postulez à une nouvelle offre
 
 ### Données de test disponibles
 
-Le seed a créé :
-- ✅ 10 offres d'emploi variées (CDI, CDD, Stage, Alternance, Intérim)
-- ✅ 5 entreprises dans différents secteurs
-- ✅ 6 utilisateurs (3 candidats + 3 recruteurs)
-- ✅ 5 candidatures existantes pour tester le suivi
+Le seed a créé automatiquement :
+- ✅ **10 offres d'emploi** variées (CDI, CDD, Stage, Alternance, Intérim)
+- ✅ **5 entreprises** dans différents secteurs (Tech, Énergie, Santé, Formation, Finance)
+- ✅ **6 utilisateurs** (3 candidats + 3 recruteurs)
+- ✅ **5 candidatures** existantes pour tester le suivi
+- ✅ **4 adaptations** de poste prédéfinies
+- ✅ **4 compétences** techniques
 
 ---
 
@@ -252,6 +270,7 @@ project-handi/
 │   │   ├── routes/           # Routes de l'API
 │   │   ├── services/         # Logique métier
 │   │   └── app.ts            # Point d'entrée
+│   ├── .env.example          # Modèle de configuration
 │   └── package.json
 │
 ├── frontend/                  # Application React
@@ -261,6 +280,7 @@ project-handi/
 │   │   │   ├── Icon.tsx      # Système d'icônes SVG
 │   │   │   ├── FiltersPanel.tsx
 │   │   │   ├── OfferCard.tsx
+│   │   │   ├── SearchBar.tsx
 │   │   │   └── ...
 │   │   ├── pages/            # Pages de l'application
 │   │   │   ├── HomePage.tsx
@@ -272,10 +292,10 @@ project-handi/
 │   │   ├── types/            # Types TypeScript
 │   │   ├── App.tsx           # Composant principal
 │   │   └── main.tsx          # Point d'entrée
-│   ├── DESIGN_SYSTEM.md      # Documentation du design system
 │   └── package.json
 │
 ├── docker-compose.yml         # Configuration Docker
+├── .env.example              # Variables d'environnement (exemple)
 ├── RAPPORT_PROJET.md         # Rapport technique détaillé
 └── README.md                 # Ce fichier
 ```
@@ -393,6 +413,9 @@ docker-compose down
 # Voir les logs
 docker-compose logs -f
 
+# Redémarrer les services
+docker-compose restart
+
 # Supprimer les volumes (⚠️ supprime les données)
 docker-compose down -v
 ```
@@ -401,40 +424,155 @@ docker-compose down -v
 
 ## 🐛 Dépannage
 
+### Problème : Docker Desktop n'est pas lancé
+
+**Symptôme** :
+```
+Cannot connect to the Docker daemon
+```
+
+**Solution** :
+1. Ouvrez manuellement l'application **Docker Desktop**
+2. Attendez que l'icône Docker dans votre barre de tâches indique "Docker is running"
+3. Réessayez `docker-compose up -d`
+
+---
+
 ### Problème : Le backend ne se connecte pas à la base de données
+
+**Symptôme** :
+```
+Error: P1001: Can't reach database server
+```
 
 **Solution** :
 1. Vérifiez que Docker est lancé : `docker ps`
-2. Vérifiez le fichier `.env` dans `backend/`
-3. Vérifiez que PostgreSQL est bien démarré : `docker-compose ps`
+2. Vérifiez que le conteneur `handi_db` est en cours d'exécution
+3. Vérifiez le fichier `.env` dans `backend/` :
+   ```env
+   DATABASE_URL="postgresql://val:val@localhost:5432/job_db"
+   ```
+4. Les identifiants doivent être **val:val** (comme défini dans `docker-compose.yml`)
 
-### Problème : Port déjà utilisé
+---
 
-**Solution** :
+### Problème : Port déjà utilisé (5432, 5000, ou 5173)
+
+**Symptôme** :
+```
+Error: Port 5432 is already in use
+```
+
+**Solution pour le port 5432 (PostgreSQL)** :
 ```bash
-# Trouver le processus qui utilise le port 5000
-lsof -i :5000
+# Trouver le processus qui utilise le port
+lsof -i :5432
 
-# Tuer le processus
+# Option 1 : Arrêter PostgreSQL local
+brew services stop postgresql  # macOS avec Homebrew
+sudo systemctl stop postgresql # Linux
+
+# Option 2 : Modifier le port Docker
+# Dans docker-compose.yml, changez :
+ports:
+  - "5433:5432"  # Utilise 5433 au lieu de 5432
+
+# Puis modifiez le .env :
+DATABASE_URL="postgresql://val:val@localhost:5433/job_db"
+```
+
+**Solution pour le port 5000 (Backend)** :
+```bash
+# Trouver et tuer le processus
+lsof -i :5000
 kill -9 <PID>
 ```
 
+**Solution pour le port 5173 (Frontend)** :
+```bash
+# Vite choisira automatiquement le port suivant (5174)
+# Ou tuez le processus :
+lsof -i :5173
+kill -9 <PID>
+```
+
+---
+
 ### Problème : Erreur de migration Prisma
+
+**Symptôme** :
+```
+Error: Migration engine error
+```
 
 **Solution** :
 ```bash
 cd backend
-npx prisma migrate reset  # ⚠️ Supprime toutes les données
+
+# Reset complet de la base (⚠️ Supprime toutes les données)
+npx prisma migrate reset
+
+# Réappliquer les migrations
 npx prisma migrate dev
+
+# Repeupler avec des données de test
 npx prisma db seed
 ```
 
+---
+
 ### Problème : Le frontend ne communique pas avec le backend
+
+**Symptôme** :
+```
+Network Error
+AxiosError: Request failed with status code 404
+```
 
 **Solution** :
 1. Vérifiez que le backend est bien lancé sur le port 5000
-2. Vérifiez la configuration dans `frontend/src/api/apiClient.ts`
+   ```bash
+   curl http://localhost:5000/api/v1/offers
+   ```
+2. Vérifiez la configuration dans `frontend/src/api/apiClient.ts` :
+   ```typescript
+   baseURL: 'http://localhost:5000/api/v1'
+   ```
 3. Vérifiez les CORS dans `backend/src/app.ts`
+
+---
+
+### Problème : `npx prisma db seed` échoue
+
+**Symptôme** :
+```
+TSError: Unable to compile TypeScript
+```
+
+**Solution** :
+1. Vérifiez que toutes les dépendances sont installées :
+   ```bash
+   cd backend
+   npm install
+   ```
+2. Vérifiez que les migrations ont bien été appliquées :
+   ```bash
+   npx prisma migrate dev
+   ```
+3. Si l'erreur persiste, consultez les logs complets
+
+---
+
+### Problème : `node_modules` trop volumineux
+
+**Solution** :
+```bash
+# Nettoyer et réinstaller
+rm -rf node_modules package-lock.json
+npm install
+
+# Faire de même dans backend/ et frontend/
+```
 
 ---
 
@@ -455,7 +593,7 @@ git commit -m "feat: description de la fonctionnalité"
 # Push
 git push origin feature/nom-de-la-fonctionnalite
 
-# Créer une Pull Request sur GitHub/GitLab
+# Créer une Pull Request sur GitHub
 ```
 
 ### Conventions de commit
@@ -479,26 +617,24 @@ git commit -m "docs: mise à jour du README avec Docker"
 
 ---
 
+## 📞 Support
+
+Si vous rencontrez des problèmes non couverts par ce README :
+
+1. Vérifiez les [issues GitHub](https://github.com/valcheu/project-handi/issues)
+2. Consultez le fichier `RAPPORT_PROJET.md` pour plus de détails techniques
+3. Contactez l'équipe de développement
+
+---
+
 ## 📝 Licence
 
 Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
 
 ---
 
-## 📞 Support
-
-Pour toute question ou problème :
-- 📧 Email : support@project-handi.fr
-- 🐛 Issues : [GitHub Issues](URL_DU_REPO/issues)
-
----
-
 ## 🙏 Remerciements
 
-- Équipe de développement
-- Utilisateurs testeurs
-- Communauté open source
+Ce projet a été développé dans le cadre d'une initiative pour promouvoir l'inclusion professionnelle des personnes en situation de handicap.
 
----
-
-**Fait avec ❤️ pour une société plus inclusive**
+**Développé avec ❤️ pour l'accessibilité universelle.**

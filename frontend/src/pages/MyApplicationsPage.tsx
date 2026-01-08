@@ -54,7 +54,7 @@ export const MyApplicationsPage = () => {
             <header className="border-b border-slate-800 p-8">
                 <div className="flex justify-between items-center">
                     <div>
-                        <h1 className="text-3xl font-bold text-sky-400">Mes Candidatures</h1>
+                <h1 className="text-3xl font-bold text-sky-400">Mes Candidatures</h1>
                         <p className="text-slate-300 mt-1">Suivez l'état de vos postulations en temps réel</p>
                     </div>
                     
@@ -94,8 +94,8 @@ export const MyApplicationsPage = () => {
                         >
                             <span>Chargement de vos candidatures...</span>
                         </div>
-                    ) : applications.length === 0 ? (
-                        <div className="bg-slate-800 border border-dashed border-slate-700 rounded-2xl p-20 text-center">
+            ) : applications.length === 0 ? (
+                <div className="bg-slate-800 border border-dashed border-slate-700 rounded-2xl p-20 text-center">
                             <p className="text-slate-300 mb-4">Vous n'avez pas encore postulé à des offres.</p>
                             <button
                                 type="button"
@@ -104,20 +104,20 @@ export const MyApplicationsPage = () => {
                             >
                                 Voir les annonces disponibles
                             </button>
-                        </div>
-                    ) : (
+                </div>
+            ) : (
                         <>
                             {/* Résumé accessible pour les lecteurs d'écran */}
                             <div className="sr-only" aria-live="polite">
                                 Vous avez {applications.length} candidature{applications.length > 1 ? 's' : ''} en cours
                             </div>
 
-                            <div className="overflow-x-auto">
+                <div className="overflow-x-auto">
                                 <table 
                                     className="w-full text-left border-separate border-spacing-y-3"
                                     aria-label="Tableau de vos candidatures"
                                 >
-                                    <thead>
+                        <thead>
                                         <tr className="text-slate-400 uppercase text-xs">
                                             <th scope="col" className="px-6 py-3">
                                                 Poste / Entreprise
@@ -128,10 +128,10 @@ export const MyApplicationsPage = () => {
                                             <th scope="col" className="px-6 py-3">
                                                 Statut
                                             </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {applications.map((app) => (
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {applications.map((app) => (
                                             <tr 
                                                 key={app.id} 
                                                 onClick={() => navigate(`/mes-candidatures/${app.id}`)}
@@ -157,7 +157,7 @@ export const MyApplicationsPage = () => {
                                                     <div className="text-sm text-slate-300">
                                                         {app.company?.name || 'Entreprise non disponible'}
                                                     </div>
-                                                </td>
+                                    </td>
 
                                                 {/* Cellule Date */}
                                                 <td 
@@ -171,7 +171,7 @@ export const MyApplicationsPage = () => {
                                                             day: 'numeric'
                                                         })}
                                                     </time>
-                                                </td>
+                                    </td>
 
                                                 {/* Cellule Statut */}
                                                 <td 
@@ -190,15 +190,15 @@ export const MyApplicationsPage = () => {
                                                         aria-label={getStatusLabel(app.status)}
                                                     >
                                                         {getStatusText(app.status)}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                                        </span>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
                         </>
-                    )}
+            )}
                 </section>
             </main>
         </div>
